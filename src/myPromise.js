@@ -347,18 +347,19 @@
 	function handlePromiseAll(iterable,promise_result,resolve,reject) {
 
 		var len = iterable.length;
-
+		var all_status = Status.FULLFILLED;
 		for( var i = 0; i < len;i++){
 
 			var fnc = iterable[i];
 
 			if( fnc instanceof Promise && fnc._status === Status.PENDING){
 				(function(i){
+					all_status = Status.PENDING
 					fnc.then(
 						function(value) {
-							promise_result.push(value)
-							if( i===len - 1){
-								allResolve(i,len,resolve,promise_result)
+							promise_result.splice(i,0,value)
+							if(all_status === Status.PENDING){
+								allResolve(i,len,resolve,promise_result,all_status)
 							}
 						},
 						function(reson){
@@ -368,8 +369,10 @@
 					)
 				})(i)
 			}else if(fnc instanceof Promise && fnc._status === Status.FULLFILLED){
-				promise_result.push(fnc._value)
-				allResolve(i,len,resolve,promise_result)
+				promise_result.splice(i,0,fnc._value)
+				if(all_status === Status.FULLFILLED){
+					allResolve(i,len,resolve,promise_result,all_status)
+				}
 
 			}else if(fnc instanceof Promise && fnc._status === Status.REJECTED){
 				setTimeout(function(){
@@ -378,20 +381,21 @@
 				return false;
 
 			}else{
-				promise_result.push(fnc)
-				allResolve(i,len,resolve,promise_result)
+				promise_result.splice(i,0,fnc)
+				if(all_status === Status.FULLFILLED){
+					allResolve(i,len,resolve,promise_result,all_status)
+				}
 			}
 		}
 	}
 
 
-	function allResolve(i,len,resolve,promise_result){
-		if( i===len - 1){
-			setTimeout(function(){
-				resolve(promise_result);
-			})
-			return false;
-		}
+	function allResolve(i,len,resolve,promise_result,all_status){
+		setTimeout(function(){
+			resolve(promise_result);
+			all_status = Status.FULLFILLED
+		})
+		return false;
 	}
 	
 	/** 
