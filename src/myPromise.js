@@ -322,7 +322,7 @@
 
 		}else{
 
-			var promise_result = [];
+			var promise_result = {};
 
 
 			var promise = new Promise(function(resolve,reject) {
@@ -357,8 +357,10 @@
 					all_status = Status.PENDING
 					fnc.then(
 						function(value) {
-							promise_result.splice(i,0,value)
-							if(all_status === Status.PENDING){
+							promise_result[i] = value
+							if(all_status === Status.FULLFILLED){
+								allResolve(i,len,resolve,promise_result,all_status)
+							}else if( Object.keys(promise_result).length === len){
 								allResolve(i,len,resolve,promise_result,all_status)
 							}
 						},
@@ -369,7 +371,7 @@
 					)
 				})(i)
 			}else if(fnc instanceof Promise && fnc._status === Status.FULLFILLED){
-				promise_result.splice(i,0,fnc._value)
+				promise_result[i] = fnc._value
 				if(all_status === Status.FULLFILLED){
 					allResolve(i,len,resolve,promise_result,all_status)
 				}
@@ -381,7 +383,7 @@
 				return false;
 
 			}else{
-				promise_result.splice(i,0,fnc)
+				promise_result[i] = fnc
 				if(all_status === Status.FULLFILLED){
 					allResolve(i,len,resolve,promise_result,all_status)
 				}
@@ -391,8 +393,13 @@
 
 
 	function allResolve(i,len,resolve,promise_result,all_status){
+
+		var result = []
 		setTimeout(function(){
-			resolve(promise_result);
+			Object.keys(promise_result).forEach(function(key){
+				result.push(promise_result[key])
+			})	
+			resolve(result);
 			all_status = Status.FULLFILLED
 		})
 		return false;
